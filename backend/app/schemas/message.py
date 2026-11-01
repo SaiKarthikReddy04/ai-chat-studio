@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+ProviderId = Literal["gemini", "openai", "anthropic", "nvidia", "openrouter"]
 
 class MessageCreate(BaseModel):
     content: str = Field(
@@ -14,6 +15,7 @@ class MessageCreate(BaseModel):
         min_length=1,
         max_length=100,
     )
+    provider: ProviderId = "gemini"
 
 
 class MessageRead(BaseModel):

@@ -1,4 +1,9 @@
-import type { ChatMessage, ConversationSummary } from "../types";
+import type {
+  ChatMessage,
+  ChatModel,
+  ConversationSummary,
+  ProviderId,
+} from "../types";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8001/api/v1";
@@ -94,13 +99,14 @@ export async function listMessages(
 export async function sendMessage(
   conversationId: string,
   content: string,
+  provider: ProviderId = "gemini",
   model = "gemini-3.6-flash",
 ): Promise<ChatMessage> {
   const data = await request<ApiMessage>(
     `/conversations/${conversationId}/messages`,
     {
       method: "POST",
-      body: JSON.stringify({ content, model }),
+      body: JSON.stringify({ content, provider, model }),
     },
   );
 
@@ -128,4 +134,8 @@ export async function deleteConversation(
   await request<void>(`/conversations/${conversationId}`, {
     method: "DELETE",
   });
+}
+
+export async function listModels(): Promise<ChatModel[]> {
+  return request<ChatModel[]>("/models");
 }

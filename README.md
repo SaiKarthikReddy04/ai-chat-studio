@@ -1,11 +1,11 @@
 # Lume — AI Chat Studio
 
-Lume is a full-stack AI chat application with a React interface and a FastAPI backend. It supports persistent conversations, message history, and Gemini responses.
+Lume is a full-stack AI chat application with a React interface and a FastAPI backend. It supports persistent conversations, message history, and supports conversations with Gemini, OpenAI, Anthropic Claude, NVIDIA NIM, and OpenRouter.
 
 ## Features
 
 - Create, search, rename, and delete conversations
-- Send messages to Google Gemini
+- Choose a configured AI model; unavailable providers are shown as not configured.
 - Persist conversations and messages in SQLite
 - View and restore conversation history
 - Explore the API through FastAPI's OpenAPI documentation
@@ -15,7 +15,7 @@ Lume is a full-stack AI chat application with a React interface and a FastAPI ba
 - **Frontend:** React, TypeScript, Vite, Tailwind CSS
 - **Backend:** Python, FastAPI, Pydantic
 - **Database:** SQLite, SQLAlchemy, Alembic
-- **AI provider:** Google Gemini through the Google Gen AI SDK
+- **AI provider:** Google Gemini through the Google Gen AI SDK, OpenAI, Anthropic Claude, NVIDIA NIM, and OpenRouter.
 
 ## Project structure
 
@@ -93,9 +93,10 @@ npm run build
 - `DELETE /api/v1/conversations/{conversation_id}`
 - `GET /api/v1/conversations/{conversation_id}/messages`
 - `POST /api/v1/conversations/{conversation_id}/messages`
+- `GET /api/v1/models`
 
 ## Configuration
 
-Backend configuration lives in `backend/.env`. Use `backend/.env.example` as the template. Never commit API keys or other secrets.
+Backend configuration lives in `backend/.env`. Use `backend/.env.example` as the template. Never commit API keys or other secrets. API usage may have provider-specific pricing, quotas, and terms.
 
 The SQLite database is local development data and is excluded from Git.

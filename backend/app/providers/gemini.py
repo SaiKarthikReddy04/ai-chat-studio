@@ -4,7 +4,7 @@ from app.core.config import settings
 
 
 class GeminiProvider:
-    async def generate(self, prompt: str) -> str:
+    async def generate(self, prompt: str, model: str | None = None) -> str:
         if not settings.gemini_api_key:
             raise RuntimeError("GEMINI_API_KEY is not configured.")
 
@@ -12,7 +12,7 @@ class GeminiProvider:
 
         try:
             response = await client.models.generate_content(
-                model=settings.gemini_model,
+                model=model or settings.gemini_model,
                 contents=prompt,
             )
             answer = response.text

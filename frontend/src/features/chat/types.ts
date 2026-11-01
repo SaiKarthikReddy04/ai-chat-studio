@@ -1,6 +1,11 @@
 export type MessageRole = "user" | "assistant";
 
-export type ProviderId = "gemini" | "openai" | "anthropic";
+export type ProviderId =
+  | "gemini"
+  | "openai"
+  | "anthropic"
+  | "nvidia"
+  | "openrouter";
 
 export type ModelAvailability = "available" | "not-configured";
 

@@ -9,16 +9,17 @@ import {
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { MessageBubble } from "./components/MessageBubble";
 import { MessageComposer } from "./components/MessageComposer";
-import type { ChatMessage, ConversationSummary } from "./types";
 import {
   createConversation,
   deleteConversation,
   listConversations,
   listMessages,
+  listModels,
   renameConversation,
   sendMessage,
 } from "./api/chatApi";
 
+import type { ChatMessage, ChatModel, ConversationSummary } from "./types";
 
 interface LocalConversation extends ConversationSummary {
   messages: ChatMessage[];
@@ -59,6 +60,16 @@ export function ChatPage() {
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [models, setModels] = useState<ChatModel[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState("");
+  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+  const modelMenuRef = useRef<HTMLDivElement>(null);
+
+  const selectedModel =
+    models.find(
+      (model) =>
+        model.id === selectedModelId && model.availability === "available",
+    ) ?? null;
 
   const activeConversation = conversations.find(
     (conversation) => conversation.id === activeConversationId,
@@ -103,6 +114,61 @@ export function ChatPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function loadModels() {
+      try {
+        const catalog = await listModels();
+
+        if (cancelled) return;
+
+        setModels(catalog);
+
+        const preferredModel =
+          catalog.find(
+            (model) =>
+              model.provider === "gemini" && model.availability === "available",
+          ) ?? catalog.find((model) => model.availability === "available");
+
+        setSelectedModelId(preferredModel?.id ?? "");
+      } catch (error) {
+        console.error("Could not load models:", error);
+      }
+    }
+
+    void loadModels();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (
+        modelMenuRef.current &&
+        !modelMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsModelMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsModelMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isSending]);
 
@@ -142,7 +208,9 @@ export function ChatPage() {
   async function handleSend() {
     const content = draft.trim();
 
-    if (!content || isSending || !activeConversation) {
+    const modelToSend = selectedModel;
+
+    if (!content || isSending || !activeConversation || !modelToSend) {
       return;
     }
 
@@ -184,7 +252,12 @@ export function ChatPage() {
         );
       }
 
-      const assistantMessage = await sendMessage(conversationId, content);
+      const assistantMessage = await sendMessage(
+        conversationId,
+        content,
+        selectedModel.provider,
+        selectedModel.id,
+      );
 
       let savedTitle: string | undefined;
       if (isFirstMessage && activeConversation.id !== "local-welcome") {
@@ -345,17 +418,123 @@ export function ChatPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-full border border-white/[0.09] bg-white/[0.035] px-3 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.18)]">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-40" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
-              </span>
-              <span className="text-[11px] font-medium text-slate-300">
-                Gemini 3.6 Flash
-              </span>
-              <span className="hidden rounded-full bg-emerald-300/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-300 sm:inline">
-                Free
-              </span>
+            <div ref={modelMenuRef} className="relative">
+              <button
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={isModelMenuOpen}
+                onClick={() => setIsModelMenuOpen((open) => !open)}
+                className="flex h-11 min-w-[220px] items-center gap-2.5 rounded-xl border border-white/[0.09] bg-white/[0.035] px-3 text-left shadow-[0_8px_30px_rgba(0,0,0,0.18)] transition hover:border-violet-300/20 hover:bg-white/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+              >
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-violet-300/10 text-violet-200">
+                  <Sparkles size={14} aria-hidden="true" />
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[11px] font-medium text-slate-100">
+                    {selectedModel?.name ?? "Choose a model"}
+                  </span>
+                  <span className="mt-0.5 block text-[9px] capitalize text-slate-500">
+                    {selectedModel
+                      ? `${selectedModel.provider} · Ready`
+                      : "Select an available model"}
+                  </span>
+                </span>
+
+                <span
+                  className={`shrink-0 text-slate-500 transition ${
+                    isModelMenuOpen ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                >
+                  ▾
+                </span>
+              </button>
+
+              {isModelMenuOpen && (
+                <div
+                  role="menu"
+                  aria-label="Choose a model"
+                  className="absolute right-0 top-full z-50 mt-2 w-[280px] overflow-hidden rounded-2xl border border-white/10 bg-[#11131b]/95 p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.65)] backdrop-blur-xl"
+                >
+                  <div className="flex items-center justify-between border-b border-white/[0.06] px-3 py-2.5">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Model library
+                    </span>
+                    <span className="text-[9px] text-slate-600">
+                      {
+                        models.filter(
+                          (model) => model.availability === "available",
+                        ).length
+                      }{" "}
+                      ready
+                    </span>
+                  </div>
+
+                  <div className="max-h-72 overflow-y-auto py-1">
+                    {models.map((model) => {
+                      const isAvailable = model.availability === "available";
+                      const isSelected = model.id === selectedModelId;
+
+                      return (
+                        <button
+                          key={`${model.provider}-${model.id}`}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={isSelected}
+                          disabled={!isAvailable}
+                          onClick={() => {
+                            setSelectedModelId(model.id);
+                            setIsModelMenuOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition ${
+                            isAvailable
+                              ? "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                              : "cursor-not-allowed text-slate-600"
+                          } ${isSelected ? "bg-violet-300/[0.08]" : ""}`}
+                        >
+                          <span
+                            className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
+                              isAvailable
+                                ? "bg-violet-300/10 text-violet-200"
+                                : "bg-white/[0.025] text-slate-700"
+                            }`}
+                          >
+                            <Sparkles size={14} aria-hidden="true" />
+                          </span>
+
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[11px] font-medium">
+                              {model.name}
+                            </span>
+                            <span className="mt-0.5 block text-[9px] capitalize text-slate-500">
+                              {model.provider}
+                            </span>
+                          </span>
+
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-1 text-[8px] font-medium ${
+                              isAvailable
+                                ? "border border-emerald-300/10 bg-emerald-300/[0.06] text-emerald-200"
+                                : "border border-white/[0.05] bg-white/[0.025] text-slate-600"
+                            }`}
+                          >
+                            {isAvailable
+                              ? isSelected
+                                ? "Selected"
+                                : "Ready"
+                              : "Add key"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="border-t border-white/[0.06] px-3 py-2 text-[9px] text-slate-600">
+                    Provider access follows your backend configuration.
+                  </div>
+                </div>
+              )}
             </div>
           </header>
 
@@ -475,11 +654,6 @@ export function ChatPage() {
                       </p>
                     </div>
                   </div>
-                </div>
-
-                <div className="mt-10 flex items-center gap-2 border-t border-white/[0.06] pt-4 text-[10px] text-slate-600">
-                  <span className="size-1.5 rounded-full bg-amber-300/80" />
-                  Preview mode · messages are not connected to the backend yet
                 </div>
               </div>
             ) : (

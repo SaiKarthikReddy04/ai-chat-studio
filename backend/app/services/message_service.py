@@ -6,14 +6,12 @@ from app.db.models.conversation import Conversation
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.message_repository import MessageRepository
 from app.schemas.message import MessageCreate
-from app.providers.gemini import GeminiProvider
-
+from app.providers.factory import get_provider
 
 class MessageService:
     def __init__(self) -> None:
         self.conversations = ConversationRepository()
         self.messages = MessageRepository()
-        self.gemini = GeminiProvider()
 
     async def send_message(
         self,
@@ -30,7 +28,7 @@ class MessageService:
             conversation_id=conversation_id,
             role="user",
             content=request.content,
-            provider="gemini",
+            provider=request.provider,
             model=request.model,
         )
         session.commit()
@@ -41,14 +39,15 @@ class MessageService:
             for message in history
         )
 
-        answer = await self.gemini.generate(prompt)
+        provider = get_provider(request.provider)
+        answer = await provider.generate(prompt, request.model)
 
         assistant_message = self.messages.create(
             session,
             conversation_id=conversation_id,
             role="assistant",
             content=answer,
-            provider="gemini",
+            provider=request.provider,
             model=request.model,
         )
 
