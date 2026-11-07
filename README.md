@@ -4,9 +4,9 @@ Lume is a full-stack AI chat application with a React interface and a FastAPI ba
 
 ## Demo
 
-[![Watch the Lume demo](docs/assets/screenshots/chat-workspace.png)](https://www.youtube.com/watch?v=LC9ZVu1v9Ko)
+https://github.com/user-attachments/assets/48e94521-92ae-48c7-8dd0-56311c2e24b1
 
-*See Lume’s model selection and chat flow.*
+
 
 ## Screenshots
 
