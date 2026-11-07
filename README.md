@@ -2,6 +2,32 @@
 
 Lume is a full-stack AI chat application with a React interface and a FastAPI backend. It supports persistent conversations, message history, and supports conversations with Gemini, OpenAI, Anthropic Claude, NVIDIA NIM, and OpenRouter.
 
+## Demo
+
+[![Watch the Lume demo](docs/assets/screenshots/chat-workspace.png)](https://www.youtube.com/watch?v=LC9ZVu1v9Ko)
+
+*See Lume’s model selection and chat flow.*
+
+## Screenshots
+
+### Chat workspace
+
+![Lume chat workspace showing a conversation and AI response](docs/assets/screenshots/chat-workspace.png)
+
+
+### Chat workspace
+
+![Lume chat histo workspace showing a conversation and AI response](docs/assets/screenshots/chat-history-workspace.png)
+
+
+### Model selection
+
+![Lume model picker showing available AI providers](docs/assets/screenshots/model-selection.png)
+
+### API documentation
+
+![FastAPI Swagger UI showing the Lume API endpoints](docs/assets/screenshots/api-docs.png)
+
 ## Features
 
 - Create, search, rename, and delete conversations
@@ -34,6 +60,14 @@ AIChatBot/
 │   ├── data/                    # Local SQLite database
 │   ├── .env.example
 │   └── requirements.txt
+|
+├── docs/
+│   └── assets/
+│       └── screenshots/
+│           ├── chat-workspace.png
+│           ├── model-selection.png
+│           └── api-docs.png
+|
 ├── frontend/
 │   └── src/features/            # Chat interface and API client
 ├── ARCHITECTURE.md
